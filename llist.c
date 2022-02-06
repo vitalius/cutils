@@ -6,50 +6,63 @@
 /**
  * Initialize linked list
  */ 
-struct Node* llist_init() {
-    struct Node *head = (struct Node*) malloc(sizeof(struct Node));
-    struct Node *tail = (struct Node*) malloc(sizeof(struct Node));
+List* llist_init() {
+    List *list = (struct List*) malloc(sizeof(struct List));
+
+    // special nodes for HEAD and TAIL of the list
+    // these don't hold any data
+    Node *head = (struct Node*) malloc(sizeof(struct Node));
+    Node *tail = (struct Node*) malloc(sizeof(struct Node));
+
+    if (list == NULL || head == NULL || tail == NULL) {
+        return NULL;
+    }
+
     head->data = NULL;
     tail->data = NULL;
 
     head->next = tail;
     head->prev = NULL;
-    head->type = HEAD;
 
     tail->next = NULL;
-    tail->type = TAIL;
     tail->prev = head;
 
-    return head;
+    list->_head = head;
+    list->_tail = tail;
+
+    return list;
 }
 
 /**
  * Find and return element at the index 'idx'
  */
-Node* llist_index(Node *current, int idx) {
-    if (idx < 1)
-        idx = 1;
-
-    // rewind back to the head of the list
-    while (current->type != HEAD) {
-        current = current->prev;
-    }
+Node* llist_index(List* list, int idx) {
+    if (idx < 0)
+        idx = 0;
 
     // index from head of the list
-    int i = 1;
-    while (current->type != TAIL && i <= idx) {
-        current = current->next;
+    int i = 0;
+    Node* n = list->_head;
+    while (n != list->_tail && i != idx) {
+        n = n->next;
         i = i+1;
     }
 
-    return current;
+    return n;
 }
 
 /**
- * Add list element to the head of the list
+ * Returns pointer to data at the index
  */
-void llist_push(Node *current, void *data, size_t size) {
-    if (current == NULL) {
+void* llist_get(List* list, int idx) {
+    return llist_index(list, idx)->data;
+}
+
+/**
+ * Add element to list after index 'idx'
+ */
+void llist_push_at(List *list, void *data, size_t size, int idx) {
+    if (list == NULL) {
         return;
     }
 
@@ -58,13 +71,11 @@ void llist_push(Node *current, void *data, size_t size) {
         return;
     }
 
+    Node* current = llist_index(list, idx);
+
     new_node->next = current->next;
     new_node->prev = current;
-    new_node->type = MID;
-
-    Node *ahead = current->next;
-    ahead->prev = new_node;
-
+    current->next->prev = new_node;
     current->next = new_node;
 
     new_node->data = malloc(size);
@@ -79,14 +90,21 @@ void llist_push(Node *current, void *data, size_t size) {
     }
 }
 
+/**
+ * Add list element to the head of the list
+ */
+void llist_push(List *list, void *data, size_t size) {
+    llist_push_at(list, data, size, 0);
+}
+
 
 /**
  * Remove list element at the index and free memory
  */
-void llist_pop(Node *current, int idx) {
-    Node* n = llist_index(current, idx);
+void llist_delete(List* list, int idx) {
+    Node* n = llist_index(list, idx);
 
-    if (n == NULL || n->type != MID) {
+    if (n == NULL || n == list->_head || n == list->_tail) {
         return;
     }
 
@@ -102,31 +120,33 @@ void llist_pop(Node *current, int idx) {
 /**
  * Swap node data
  */
-void llist_swap_nodes(Node* a, Node* b) {
-    if (a->type != MID || b->type != MID) {
+void llist_swap_data_ptrs(List* list, Node* a, Node* b) {
+    if (a == list->_head 
+           || a == list->_tail 
+           || a == b 
+           || b == list->_head 
+           || b == list->_tail) {
         return;
     }
 
-    struct Node tmp;
-    tmp.data = a->data;
+    void* d_ptr = a->data;
     a->data = b->data;
-    b->data = tmp.data;
+    b->data = d_ptr;
 }
 
 
 /**
  * Simple bubble sort
  */
-void llist_sort(Node *current, int (*cmp_func_ptr)(void*, void*)) {
-    Node* a = llist_index(current, 0);
-    Node* b = llist_index(current, 0);
+void llist_sort(List *list, int (*cmp_func_ptr)(void*, void*)) {
+    Node* a = list->_head->next;
+    Node* b = list->_head->next;
 
-    while (a->type == MID) {
-        b = llist_index(current, 0);
-        while (b->type == MID) {
-            if (a->data != NULL && b->data != NULL 
-                    && 1 > (*cmp_func_ptr)(a->data, b->data)) {
-                llist_swap_nodes(a, b);
+    while (a != list->_tail) {
+        b = list->_head->next;
+        while (b != list->_tail) {
+            if (-1 == (*cmp_func_ptr)(a->data, b->data)) {
+                llist_swap_data_ptrs(list, a, b);
             }
             b = b->next;
         }
@@ -138,9 +158,9 @@ void llist_sort(Node *current, int (*cmp_func_ptr)(void*, void*)) {
 /**
  * Map function onto list data 
  */
-void llist_map(Node *current, void (*map_func_ptr)(void *)) {
-    Node* n = llist_index(current, 0);
-    while (n->type == MID) {
+void llist_map(List* list, void (*map_func_ptr)(void *)) {
+    Node* n = list->_head->next;
+    while (n != list->_tail) {
         (*map_func_ptr)(n->data);
         n = n->next;
     }
@@ -150,11 +170,11 @@ void llist_map(Node *current, void (*map_func_ptr)(void *)) {
 /**
  * Returns the length of the list
  */
-int llist_len(Node *current) {
-    Node* n = llist_index(current, 0);
+int llist_len(List* list) {
+    Node* n = list->_head->next;
 
     int count = 0;
-    while (n->type == MID) {
+    while (n != list->_tail) {
         count += 1;
         n = n->next;
     }

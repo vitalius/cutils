@@ -18,8 +18,8 @@ int compare_node(void *a, void *b) {
 
 
 int main(int argc, char** argv) {
-    Node* list = llist_init();
-    int k = 17, i;
+    List* list = llist_init();
+    int k = 19999, i; 
 
     for(i=0; i<k; i++) {
         llist_push(list, &i, sizeof(int));
@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
     printf("\n");
 
     llist_sort(list, compare_node);
-    
     llist_map(list, print_node);
     printf("\n");
 
@@ -36,7 +35,7 @@ int main(int argc, char** argv) {
     printf("Size %d\n", llen);
 
     for(i=0; i<k; i++) {
-        llist_pop(list, llen-i);
+        llist_delete(list, llen-i);
     }
 
     llist_map(list, print_node);

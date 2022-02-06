@@ -1,24 +1,26 @@
-typedef enum { 
-    HEAD, 
-    TAIL, 
-    MID 
-} llist_node_type;
-
 typedef struct Node {
     struct Node *next;
     struct Node *prev;
-    llist_node_type type;
 
     void *data;
 
 } Node;
 
+typedef struct List {
+    struct Node *_head;
+    struct Node *_tail;
+} List;
 
-struct Node* llist_init();
-Node* llist_index(Node *current, int idx);
-void llist_push(Node *current, void *data, size_t size);
-void llist_pop(Node *current, int idx);
-void llist_swap_nodes(Node* a, Node* b);
-void llist_sort(Node *current, int (*cmp_func_ptr)(void*, void*));
-void llist_map(Node *current, void (*map_func_ptr)(void *));
-int llist_len(Node *current);
+
+List* llist_init();
+void llist_push(List* list, void *data, size_t size);
+void llist_push_at(List* list, void *data, size_t size, int idx);
+void llist_map(List* list, void (*map_func_ptr)(void *));
+Node* llist_index(List *list, int idx);
+void* llist_get(List *list, int idx);
+void llist_delete(List *list, int idx);
+int llist_len(List* list);
+
+void llist_swap_data_ptrs(List* list, Node* a, Node* b);
+void llist_sort(List* list, int (*cmp_func_ptr)(void*, void*));
+
